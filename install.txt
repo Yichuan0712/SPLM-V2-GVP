@@ -1,0 +1,27 @@
+conda create --name splm_v2 python=3.10
+conda activate splm_v2
+conda install pytorch=2.2.1 torchvision=0.17.1 torchaudio=2.2.1 pytorch-cuda=12.1 -c pytorch -c nvidia
+
+pip install "numpy<2"
+pip install torchmetrics==1.6.1
+conda install matplotlib
+pip install accelerate==1.4.0
+pip install transformers==4.48
+pip install timm==1.0.15
+pip install 'git+https://github.com/katsura-jp/pytorch-cosine-annealing-with-warmup'
+pip install tensorboard
+pip install python-box
+conda install pandas
+pip install -U scikit-learn
+conda install pyg -c pyg
+conda install h5py
+pip install fair-esm
+conda install pytorch-scatter -c pyg
+conda install pytorch-cluster -c pyg
+
+pip install openpyxl
+pip install scikit-MultiLearn==0.2.0 
+pip install peft
+pip install torchviz
+pip install geomloss
+pip install Bio
