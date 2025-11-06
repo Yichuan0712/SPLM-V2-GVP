@@ -191,8 +191,8 @@ def preprocess_file(file_path, max_len, save_path, dictn, report_dict, similarit
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Processing PDB files.')
-    parser.add_argument('--data', default='./test_data', help='Path to PDB files.')
+    parser = argparse.ArgumentParser(description='Processing CIF files.')
+    parser.add_argument('--data', default='./test_data', help='Path to CIF files.')
     parser.add_argument('--max_len', default=1024, type=int, help='Max sequence length to consider.')
     parser.add_argument('--save_path', default='./save_test/', help='Path to output.')
     parser.add_argument('--max_workers', default=16, type=int,

@@ -55,7 +55,7 @@ model:
     edge_h_dim: (32,1)   #default (32,1)
     use_seq:
        enable: False
-       seq_embed_mode: "Atchleyfactor" #"embedding":20,"ESM2":1280,Atchleyfactor:5 PhysicsPCA:5
+       seq_embed_mode: "noseq" #"embedding":20,"ESM2":1280,Atchleyfactor:5 PhysicsPCA:5
        seq_embed_dim: 5 #1280 for ESM2
     lora:
       enable: False
