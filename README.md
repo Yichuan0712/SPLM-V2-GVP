@@ -15,7 +15,7 @@ SPLM-V2-GVP aligns a sequence encoder (e.g., ESM) with a **GVP** (Geometric Vect
 ---
 ## Installation
 
-Please **install dependencies exactly in the order listed in `install.txt`**.
+Please **install dependencies exactly in the order listed in [install.txt](https://github.com/Yichuan0712/SPLM-V2-GVP/blob/main/install.txt)**.
 
 
 ---
@@ -45,7 +45,6 @@ python data/preprocess_pdb.py \
 
 > Only the **processed HDF5** can be consumed by the structure (GVP) branch.
 
----
 
 ### 2) Embedding extraction
 
@@ -107,7 +106,6 @@ python -m utils.generate_seq_embedding \
   --residue_level
 ```
 
----
 
 ### 3) CATH evaluation (structure branch)
 
