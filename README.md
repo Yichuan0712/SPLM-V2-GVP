@@ -139,7 +139,6 @@ scores_cath = evaluate_with_cath_more_struct(
     configs=configs
 )
 
-# scores_cath contains the metrics reported in the notebook (digits, ARI, silhouette, etc.)
 print(scores_cath)
 ```
 
