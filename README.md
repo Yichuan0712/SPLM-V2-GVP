@@ -1,13 +1,13 @@
-# SPLM-V2-GVP  [![paper](https://img.shields.io/badge/bioRxiv-Paper-<COLOR>.svg)](https://www.biorxiv.org/content/10.1101/2025.04.23.650337v1)
+# S-PLM V2 GVP  [![paper](https://img.shields.io/badge/bioRxiv-Paper-<COLOR>.svg)](https://www.biorxiv.org/content/10.1101/2025.04.23.650337v1)
 
 <p align="center">
     <img src="https://i.imgur.com/waxVImv.png" alt="Oryx Video-ChatGPT">
 </p>
 
 
-**Structure-aware Protein Language Model V2**
+**[Enhancing Structure-aware Protein Language Models with Efficient Fine-tuning for Various Protein Prediction Tasks](https://www.biorxiv.org/content/10.1101/2025.04.23.650337v1)**
 
-SPLM-V2-GVP aligns a sequence encoder (e.g., ESM) with a **GVP** (Geometric Vector Perceptron) structural encoder to inject 3D knowledge into residue- and protein-level embeddings for downstream protein prediction tasks. Compared with S-PLM v1 (which used contact-map + Swin), V2 replaces the structure branch with **GVP over coordinate graphs**, providing geometry-aware features at the residue level.
+SPLM-V2-GVP aligns a sequence encoder (e.g., ESM) with a **GVP** (Geometric Vector Perceptron) structural encoder to inject 3D knowledge into residue- and protein-level embeddings for downstream protein prediction tasks. Compared with S-PLM v1 (which used contact-map + Swin-Transformer), V2 replaces the structure branch with **GVP over protein 3D coordinates**, providing geometry-aware features at the residue level.
 
 
 > Prior work: [S-PLM v1](https://github.com/duolinwang/S-PLM)
@@ -148,7 +148,7 @@ print(scores_cath)
 ## Citation
 If you use this code or the pretrained models, please cite the following paper:
 
-### [1] S-PLM V2: residue-level model using a GVP structural encoder; efficient fine-tuning toolkit.
+### [1] Enhancing Structure-aware Protein Language Models with Efficient Fine-tuning for Various Protein Prediction Tasks.
 Zhang Y, Qin Y, Pourmirzaei M, Shao Q, Wang D, Xu D. Enhancing Structure-Aware Protein Language Models with Efficient Fine-Tuning for Various Protein Prediction Tasks. *Methods Mol Biol.* 2025;2941:31–58. doi:10.1007/978-1-0716-4623-6_2. PMID: 40601249.
 
 ### [2] S-PLM V1: protein-level contrastive learning, using Swin-transformer as protein structure encoder.
