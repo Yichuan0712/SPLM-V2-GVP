@@ -12,25 +12,22 @@ SPLM-V2-GVP aligns a sequence encoder (e.g., ESM) with a **GVP** (Geometric Vect
 
 > Prior work: [S-PLM v1](https://github.com/duolinwang/S-PLM)
 
----
+   
 ## Installation
 
 Please **install dependencies exactly in the order listed in [install.txt](https://github.com/Yichuan0712/SPLM-V2-GVP/blob/main/install.txt)**.
 
 
----
+   
 ## Pretrained checkpoint
 
 Download the pretrained SPLM-V2-GVP weights from **[this OneDrive link](https://mailmissouri-my.sharepoint.com/personal/wangdu_umsystem_edu/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fwangdu%5Fumsystem%5Fedu%2FDocuments%2FS%2DPLM%2Dmodel%2Fmodel%2Fcheckpoint%5F0280000%5Fgvp%2Epth&parent=%2Fpersonal%2Fwangdu%5Fumsystem%5Fedu%2FDocuments%2FS%2DPLM%2Dmodel%2Fmodel&ga=1)** and set its path in your config or pass it via `--checkpoint_path`.
 
----
+   
 
-## Quickstart (notebook) [![Colab quickstart](https://img.shields.io/badge/Colab-quickstart-e91e63)](#)
+## Quickstart  [![Colab quickstart](https://img.shields.io/badge/Colab-quickstart-e91e63)](#)
 
-Open [**SPLM_v2_GVP_quickstart.ipynb**](https://github.com/Yichuan0712/SPLM-V2-GVP/blob/main/SPLM_v2_GVP_quickstart.ipynb) for a minimal, runnable demo: environment checks, model loading, residue-/protein-level representation extraction, and a small-scale downstream workflow sketch.
-
----
-## Run
+### Open [**SPLM_v2_GVP_quickstart.ipynb**](https://github.com/Yichuan0712/SPLM-V2-GVP/blob/main/SPLM_v2_GVP_quickstart.ipynb) for a minimal, runnable demo.
 
 ### 1) Preprocess PDB → HDF5 (GVP-ready)
 
@@ -147,7 +144,7 @@ print(scores_cath)
 ```
 
 
----
+   
 
 ## Citation
 If you use this code or the pretrained models, please cite the following paper:
