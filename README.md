@@ -1,9 +1,9 @@
-# SPLM-V2-GVP
+# SPLM-V2-GVP  [![paper](https://img.shields.io/badge/bioRxiv-Paper-<COLOR>.svg)](https://www.biorxiv.org/content/10.1101/2025.04.23.650337v1)
+
 <p align="center">
     <img src="https://i.imgur.com/waxVImv.png" alt="Oryx Video-ChatGPT">
 </p>
 
-[![paper](https://img.shields.io/badge/bioRxiv-Paper-<COLOR>.svg)](https://www.biorxiv.org/content/10.1101/2025.04.23.650337v1)
 
 **Structure-aware Protein Language Model V2**
 
