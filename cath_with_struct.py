@@ -17,6 +17,7 @@ from sklearn.metrics import silhouette_score
 from torch_geometric.nn import radius, global_mean_pool, global_max_pool
 from data.data import custom_collate, ProteinGraphDataset
 from utils.generate_struct_embedding import StructRepresentModel
+import argparse
 
 
 def scatter_labeled_z(z_batch, colors, filename="test_plot"):
@@ -166,3 +167,103 @@ def test_evaluate_allcases():
             f"gvp_digit_num_1_ARI:{scores_cath[2]}\tgvp_digit_num_2_ARI:{scores_cath[5]}\tgvp_digit_num_3_ARI:{scores_cath[8]}\n")
         file.write(
             f"gvp_digit_num_1_silhouette:{scores_cath[3]}\tgvp_digit_num_2_silhouette:{scores_cath[7]}\tgvp_digit_num_3_silhouette:{scores_cath[11]}\n")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Evaluate S-PLM2 structure embeddings on CATH."
+    )
+    parser.add_argument(
+        "--checkpoint_path",
+        type=str,
+        required=True,
+        help="Path to the pretrained checkpoint (.pth).",
+    )
+    parser.add_argument(
+        "--config_path",
+        type=str,
+        required=True,
+        help="Path to the YAML config used for the checkpoint.",
+    )
+    args = parser.parse_args()
+
+    # Build model & load checkpoint
+    model, device, configs = StructRepresentModel(
+        config_path=args.config_path,
+        checkpoint_path=args.checkpoint_path,
+    )
+    cathpath = configs.valid_settings.eval_struct.cath_pdb_path
+    base = os.path.splitext(args.config_path)[0]
+    out_figure_path = os.path.join(base, "CATH_test_release")
+    Path(out_figure_path).mkdir(parents=True, exist_ok=True)
+    print("Saved to", out_figure_path)
+
+    scores_cath = evaluate_with_cath_more_struct(
+        out_figure_path=out_figure_path,
+        device=device,
+        batch_size=1,
+        model=model,
+        cathpath=cathpath,
+        configs=configs,
+    )
+
+    (
+        ch1_full, ch1_tsne, ari1, sil1,
+        ch2_full, ch2_tsne, ari2, sil2,
+        ch3_full, ch3_tsne, ari3, sil3,
+    ) = scores_cath
+
+    print("\n=== CATH clustering evaluation (structure embeddings) ===")
+
+    print(
+        f"[Calinski–Harabasz score]\n"
+        f"  - Class level (digit 1):       full = {ch1_full:.4f}, t-SNE = {ch1_tsne:.4f}\n"
+        f"  - Architecture level (digit 2): full = {ch2_full:.4f}, t-SNE = {ch2_tsne:.4f}\n"
+        f"  - Fold level (digit 3):         full = {ch3_full:.4f}, t-SNE = {ch3_tsne:.4f}"
+    )
+
+    print(
+        f"\n[Adjusted Rand index (ARI) for k-means on t-SNE embeddings]\n"
+        f"  - Class level (digit 1):       {ari1:.4f}\n"
+        f"  - Architecture level (digit 2): {ari2:.4f}\n"
+        f"  - Fold level (digit 3):         {ari3:.4f}"
+    )
+
+    print(
+        f"\n[Silhouette score (using full-dimensional embeddings)]\n"
+        f"  - Class level (digit 1):       {sil1:.4f}\n"
+        f"  - Architecture level (digit 2): {sil2:.4f}\n"
+        f"  - Fold level (digit 3):         {sil3:.4f}\n"
+    )
+
+    scores_file = os.path.join(out_figure_path, "scores.txt")
+    with open(scores_file, "w") as f:
+        f.write("CATH clustering evaluation (structure embeddings)\n")
+        f.write("===============================================\n\n")
+
+        f.write("[Calinski–Harabasz score]\n")
+        f.write(
+            f"  - Class level (digit 1):       full = {ch1_full:.4f}, t-SNE = {ch1_tsne:.4f}\n"
+            f"  - Architecture level (digit 2): full = {ch2_full:.4f}, t-SNE = {ch2_tsne:.4f}\n"
+            f"  - Fold level (digit 3):         full = {ch3_full:.4f}, t-SNE = {ch3_tsne:.4f}\n\n"
+        )
+
+        f.write("[Adjusted Rand index (ARI) for k-means on t-SNE embeddings]\n")
+        f.write(
+            f"  - Class level (digit 1):       {ari1:.4f}\n"
+            f"  - Architecture level (digit 2): {ari2:.4f}\n"
+            f"  - Fold level (digit 3):         {ari3:.4f}\n\n"
+        )
+
+        f.write("[Silhouette score (using full-dimensional embeddings)]\n")
+        f.write(
+            f"  - Class level (digit 1):       {sil1:.4f}\n"
+            f"  - Architecture level (digit 2): {sil2:.4f}\n"
+            f"  - Fold level (digit 3):         {sil3:.4f}\n"
+        )
+
+    print(f"Scores written to {scores_file}")
+
+
+if __name__ == "__main__":
+    main()
