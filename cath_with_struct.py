@@ -185,6 +185,11 @@ def main():
         required=True,
         help="Path to the YAML config used for the checkpoint.",
     )
+    parser.add_argument(
+        "--cath_path",
+        type=str,
+        required=True,
+    )
     args = parser.parse_args()
 
     # Build model & load checkpoint
@@ -192,7 +197,7 @@ def main():
         config_path=args.config_path,
         checkpoint_path=args.checkpoint_path,
     )
-    cathpath = configs.valid_settings.eval_struct.cath_pdb_path
+    cathpath = args.cath_path
     base = os.path.splitext(args.config_path)[0]
     out_figure_path = os.path.join(base, "CATH_test_release")
     Path(out_figure_path).mkdir(parents=True, exist_ok=True)
