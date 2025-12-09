@@ -18,15 +18,42 @@ from torch_geometric.nn import radius, global_mean_pool, global_max_pool
 from data.data import custom_collate, ProteinGraphDataset
 from utils.generate_struct_embedding import StructRepresentModel
 import argparse
+from matplotlib.lines import Line2D
 
 
-def scatter_labeled_z(z_batch, colors, filename="test_plot"):
-    fig = plt.gcf()
+def scatter_labeled_z(z_batch, colors, filename="test_plot.png",
+                      legend_labels=None, legend_title=None):
+    """
+    Save a 2D scatter plot of embeddings colored by class.
+
+    Parameters
+    ----------
+    z_batch : np.ndarray, shape [N, 2]
+        2D embeddings (e.g., t-SNE output).
+    colors : list[str]
+        Color for each point.
+    filename : str
+        Output path for the PNG file.
+    legend_labels : dict, optional
+        Mapping from class label (str) to color (str), used to build a legend.
+    legend_title : str, optional
+        Title for the legend (e.g., "CATH class", "CATH architecture").
+    """
     plt.switch_backend('Agg')
+    fig = plt.gcf()
     fig.set_size_inches(3.5, 3.5)
     plt.clf()
+
+    # scatter all points
     for n in range(z_batch.shape[0]):
-        result = plt.scatter(z_batch[n, 0], z_batch[n, 1], c=colors[n], s=50, marker="o", edgecolors='none')
+        plt.scatter(
+            z_batch[n, 0],
+            z_batch[n, 1],
+            c=colors[n],
+            s=50,
+            marker="o",
+            edgecolors='none'
+        )
 
     ax = plt.subplot(111)
     box = ax.get_position()
@@ -35,103 +62,231 @@ def scatter_labeled_z(z_batch, colors, filename="test_plot"):
     plt.yticks([], [])
     plt.xlabel("z1")
     plt.ylabel("z2")
-    plt.savefig(filename)
-    # pylab.show()
+
+    # add legend if legend_labels is provided
+    if legend_labels:
+        # legend_labels: {label_str: color_str}
+        handles = []
+        for label_str, color_str in legend_labels.items():
+            handles.append(
+                Line2D(
+                    [0], [0],
+                    marker='o',
+                    linestyle='',
+                    markersize=6,
+                    markerfacecolor=color_str,
+                    markeredgecolor=color_str,
+                    label=label_str,
+                )
+            )
+        ax.legend(
+            handles=handles,
+            title=legend_title,
+            loc="best",
+            fontsize=6,
+            title_fontsize=7,
+            frameon=True,
+        )
+
+    plt.savefig(filename, bbox_inches="tight")
 
 
-def evaluate_with_cath_more_struct(out_figure_path, device, batch_size,
-                                   model, cathpath, configs
-                                   # seq_mode="embedding",use_rotary_embeddings=False,
-                                   ):
+def evaluate_with_cath_more_struct(
+    out_figure_path,
+    device,
+    batch_size,
+    model,
+    cathpath,
+    configs,
+):
+    """
+    Evaluate structure embeddings on a CATH subset at multiple hierarchy levels.
+
+    This function:
+      - loads preprocessed CATH HDF5 data as ProteinGraphDataset,
+      - computes structure embeddings with the given model,
+      - projects embeddings to 2D with t-SNE,
+      - computes clustering metrics (Calinski–Harabasz, ARI, silhouette)
+        at the CATH class / architecture / fold levels,
+      - saves t-SNE scatter plots with color legends showing which
+        color corresponds to which CATH label.
+
+    Returns
+    -------
+    scores : list[float]
+        [CH_full_1, CH_tsne_1, ARI_1, sil_1,
+         CH_full_2, CH_tsne_2, ARI_2, sil_2,
+         CH_full_3, CH_tsne_3, ARI_3, sil_3]
+    """
     Path(out_figure_path).mkdir(parents=True, exist_ok=True)
 
-    dataset = ProteinGraphDataset(cathpath, max_length=configs.model.esm_encoder.max_length,
-                                  seq_mode=configs.model.struct_encoder.use_seq.seq_embed_mode,
-                                  use_rotary_embeddings=configs.model.struct_encoder.use_rotary_embeddings,
-                                  rotary_mode=configs.model.struct_encoder.rotary_mode,
-                                  use_foldseek=configs.model.struct_encoder.use_foldseek,
-                                  use_foldseek_vector=configs.model.struct_encoder.use_foldseek_vector,
-                                  top_k=configs.model.struct_encoder.top_k,
-                                  num_rbf=configs.model.struct_encoder.num_rbf,
-                                  num_positional_embeddings=configs.model.struct_encoder.num_positional_embeddings)
+    # Build dataset and dataloader
+    dataset = ProteinGraphDataset(
+        cathpath,
+        max_length=configs.model.esm_encoder.max_length,
+        seq_mode=configs.model.struct_encoder.use_seq.seq_embed_mode,
+        use_rotary_embeddings=configs.model.struct_encoder.use_rotary_embeddings,
+        rotary_mode=configs.model.struct_encoder.rotary_mode,
+        use_foldseek=configs.model.struct_encoder.use_foldseek,
+        use_foldseek_vector=configs.model.struct_encoder.use_foldseek_vector,
+        top_k=configs.model.struct_encoder.top_k,
+        num_rbf=configs.model.struct_encoder.num_rbf,
+        num_positional_embeddings=configs.model.struct_encoder.num_positional_embeddings,
+    )
 
-    val_loader = DataLoader(dataset, batch_size=batch_size, num_workers=0, pin_memory=True, collate_fn=custom_collate)
+    val_loader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        num_workers=0,
+        pin_memory=True,
+        collate_fn=custom_collate,
+    )
+
     seq_embeddings = []
     labels = []
-    # existingmodel.eval()
+
+    # Forward pass to get structure embeddings + CATH labels
     for batch in val_loader:
         with torch.inference_mode():
             graph = batch["graph"].to(device)
             model_signature = signature(model.forward)
-            if 'graph' in model_signature.parameters:
-                _, _, features_struct, _ = model(graph=graph, mode='structure', return_embedding=True)
+            if "graph" in model_signature.parameters:
+                _, _, features_struct, _ = model(
+                    graph=graph, mode="structure", return_embedding=True
+                )
             else:
-                _, _, features_struct, _ = model(graph, mode='structure', return_embedding=True)
+                _, _, features_struct, _ = model(
+                    graph, mode="structure", return_embedding=True
+                )
 
             seq_embeddings.extend(features_struct.cpu().detach().numpy())
-            labels.extend([id.split("_")[1] for id in batch['pid']])
+            # pid looks like "..._3.40.50"; we keep "3.40.50"
+            labels.extend([pid.split("_")[1] for pid in batch["pid"]])
 
-    seq_embeddings = np.asarray(seq_embeddings)  # 100
-    print(f"seq_embeddings  = {seq_embeddings.shape}")
-    # print("shape of seq_embeddings=" + str(seq_embeddings.shape))
-    mdel = TSNE(n_components=2, random_state=0, init='random', method='exact')
-    # print("Projecting to 2D by TSNE\n")
-    z_tsne_seq = mdel.fit_transform(seq_embeddings)
+    seq_embeddings = np.asarray(seq_embeddings)
+    print(f"seq_embeddings = {seq_embeddings.shape}")
+
+    if seq_embeddings.shape[0] == 0:
+        print("No samples found in CATH dataset; skipping evaluation.")
+        return []
+
+    # t-SNE projection for visualization
+    tsne = TSNE(
+        n_components=2,
+        random_state=0,
+        init="random",
+        method="exact",
+    )
+    z_tsne_seq = tsne.fit_transform(seq_embeddings)
+
     scores = []
+
+    # Hand-picked subset of CATH classes / architectures / folds
     tol_class_seq = {"1": 0, "2": 1, "3": 2}
     tol_archi_seq = {"3.30": 3, "3.40": 4, "1.10": 0, "3.10": 2, "2.60": 1}
-    tol_fold_seq = {"1.10.10": 0, "3.30.70": 3, "2.60.40": 2, "2.60.120": 1, "3.40.50": 4}
-    for digit_num in [1, 2, 3]:  # first number of digits
+    tol_fold_seq = {
+        "1.10.10": 0,
+        "3.30.70": 3,
+        "2.60.40": 2,
+        "2.60.120": 1,
+        "3.40.50": 4,
+    }
+
+    # digit_num = 1: class; 2: architecture; 3: fold
+    for digit_num in [1, 2, 3]:
         color = []
-        keys = {}
         colorid = []
-        colorindex = 0
+
+        # base color palette
         if digit_num == 1:
-            ct = ["blue", "red", "black", "yellow", "orange", "green", "olive", "gray", "magenta", "hotpink", "pink",
-                  "cyan", "peru", "darkgray", "slategray", "gold"]
+            ct = [
+                "blue", "red", "black", "yellow", "orange", "green", "olive",
+                "gray", "magenta", "hotpink", "pink", "cyan", "peru",
+                "darkgray", "slategray", "gold",
+            ]
         else:
-            ct = ["black", "yellow", "orange", "green", "olive", "gray", "magenta", "hotpink", "pink", "cyan", "peru",
-                  "darkgray", "slategray", "gold"]
+            ct = [
+                "black", "yellow", "orange", "green", "olive", "gray",
+                "magenta", "hotpink", "pink", "cyan", "peru",
+                "darkgray", "slategray", "gold",
+            ]
 
         select_index = []
-        color_dict = {}
+        # mapping: CATH code string -> color string (for legend)
+        legend_labels = {}
+
         index = 0
         for label in labels:
-            key = ".".join([x for x in label.split(".")[0:digit_num]])
+            # e.g., label = "3.40.50", digit 1 -> "3", digit 2 -> "3.40", digit 3 -> "3.40.50"
+            key = ".".join(label.split(".")[0:digit_num])
+
             if digit_num == 1:
                 keys = tol_class_seq
-            if digit_num == 2:
+            elif digit_num == 2:
                 keys = tol_archi_seq
                 if key not in tol_archi_seq:
                     index += 1
                     continue
-            if digit_num == 3:
+            else:  # digit_num == 3
                 keys = tol_fold_seq
                 if key not in tol_fold_seq:
                     index += 1
                     continue
 
-            color.append(ct[(keys[key]) % len(ct)])
-            colorid.append(keys[key])
+            class_id = keys[key]
+            color_str = ct[class_id % len(ct)]
+
+            color.append(color_str)
+            colorid.append(class_id)
             select_index.append(index)
-            color_dict[keys[key]] = ct[keys[key]]
+
+            # legend entry: show CATH code (e.g., "3", "3.40", "3.40.50")
+            legend_labels[key] = color_str
             index += 1
 
-        print(f"sample num={len(select_index)}")
-        scores.append(calinski_harabasz_score(seq_embeddings[select_index], color))
-        scores.append(calinski_harabasz_score(z_tsne_seq[select_index], color))
+        print(f"sample num (digit {digit_num}) = {len(select_index)}")
+        if len(select_index) == 0:
+            # no samples for this level; append NaNs to keep length consistent
+            scores.extend([float("nan"), float("nan"), float("nan"), float("nan")])
+            continue
 
-        scatter_labeled_z(z_tsne_seq[select_index], color,
-                          filename=os.path.join(out_figure_path, f"CATHgvp_{digit_num}.png"))
-        # add kmeans
-        kmeans = KMeans(n_clusters=len(color_dict), random_state=42)
+        # Calinski–Harabasz on full and t-SNE embeddings
+        scores.append(
+            calinski_harabasz_score(seq_embeddings[select_index], color)
+        )  # full
+        scores.append(
+            calinski_harabasz_score(z_tsne_seq[select_index], color)
+        )  # t-SNE
+
+        # Legend title
+        if digit_num == 1:
+            legend_title = "CATH class"
+        elif digit_num == 2:
+            legend_title = "CATH architecture"
+        else:
+            legend_title = "CATH fold"
+
+        # t-SNE scatter with legend
+        scatter_labeled_z(
+            z_tsne_seq[select_index],
+            color,
+            filename=os.path.join(out_figure_path, f"CATHgvp_{digit_num}.png"),
+            legend_labels=legend_labels,
+            legend_title=legend_title,
+        )
+
+        # KMeans + ARI
+        kmeans = KMeans(n_clusters=len(legend_labels), random_state=42)
         predicted_labels = kmeans.fit_predict(z_tsne_seq[select_index])
-        predicted_colors = [color_dict[label] for label in predicted_labels]
         ari = adjusted_rand_score(colorid, predicted_labels)
         scores.append(ari)
-        scores.append(silhouette_score(seq_embeddings[select_index], color))
 
-    return scores  # [digit_num1_full,digit_num_2d,digit_num2_full,digit_num2_2d]
+        # Silhouette on full embeddings
+        scores.append(
+            silhouette_score(seq_embeddings[select_index], color)
+        )
+
+    return scores
 
 
 def test_evaluate_allcases():
