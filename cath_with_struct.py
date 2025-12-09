@@ -201,7 +201,6 @@ def main():
     base = os.path.splitext(args.config_path)[0]
     out_figure_path = os.path.join(base, "CATH_test_release")
     Path(out_figure_path).mkdir(parents=True, exist_ok=True)
-    print("Saved to", out_figure_path)
 
     scores_cath = evaluate_with_cath_more_struct(
         out_figure_path=out_figure_path,
