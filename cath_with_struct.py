@@ -121,23 +121,23 @@ def evaluate_with_cath_more_struct(
     CATH_CLASS_NAME = {
         "1": "Mainly Alpha",
         "2": "Mainly Beta",
-        "3": "Alpha/Beta",
+        "3": "Alpha Beta",
     }
 
     CATH_ARCHI_NAME = {
-        "3.30": "Alpha Horseshoe",
-        "3.40": "Alpha/Beta Barrel",
+        "3.30": "2-Layer Sandwich",
+        "3.40": "3-Layer(aba) Sandwich",
         "1.10": "Orthogonal Bundle",
-        "3.10": "Alpha/Beta Complex",
-        "2.60": "Beta Sandwich",
+        "3.10": "Roll",
+        "2.60": "Sandwich",
     }
 
     CATH_FOLD_NAME = {
-        "1.10.10": "Orthogonal α-bundle",
-        "3.30.70": "Alpha Horseshoe-like",
+        "1.10.10": "Arc Repressor Mutant, subunit A",
+        "3.30.70": "Alpha-Beta Plaits",
         "2.60.40": "Immunoglobulin-like",
-        "2.60.120": "Fibronectin type III",
-        "3.40.50": "Rossmann-like",
+        "2.60.120": "Jelly Rolls",
+        "3.40.50": "Rossmann fold",
     }
 
     Path(out_figure_path).mkdir(parents=True, exist_ok=True)
@@ -262,9 +262,9 @@ def evaluate_with_cath_more_struct(
             colorid.append(class_id)
             select_index.append(index)
 
-            display_label = code2name.get(key, key)
+            # display_label = code2name.get(key, key)
             # "3.40.50 (Rossmann-like)"
-            # display_label = f"{key} ({code2name.get(key, 'Unknown')})"
+            display_label = f"{key} ({code2name.get(key, 'Unknown')})"
 
             legend_labels[display_label] = color_str
             index += 1
