@@ -118,6 +118,28 @@ def evaluate_with_cath_more_struct(
          CH_full_2, CH_tsne_2, ARI_2, sil_2,
          CH_full_3, CH_tsne_3, ARI_3, sil_3]
     """
+    CATH_CLASS_NAME = {
+        "1": "Mainly Alpha",
+        "2": "Mainly Beta",
+        "3": "Alpha/Beta",
+    }
+
+    CATH_ARCHI_NAME = {
+        "3.30": "Alpha Horseshoe",
+        "3.40": "Alpha/Beta Barrel",
+        "1.10": "Orthogonal Bundle",
+        "3.10": "Alpha/Beta Complex",
+        "2.60": "Beta Sandwich",
+    }
+
+    CATH_FOLD_NAME = {
+        "1.10.10": "Orthogonal α-bundle",
+        "3.30.70": "Alpha Horseshoe-like",
+        "2.60.40": "Immunoglobulin-like",
+        "2.60.120": "Fibronectin type III",
+        "3.40.50": "Rossmann-like",
+    }
+
     Path(out_figure_path).mkdir(parents=True, exist_ok=True)
 
     # Build dataset and dataloader
@@ -216,22 +238,22 @@ def evaluate_with_cath_more_struct(
         legend_labels = {}
 
         index = 0
-        for label in labels:
-            # e.g., label = "3.40.50", digit 1 -> "3", digit 2 -> "3.40", digit 3 -> "3.40.50"
-            key = ".".join(label.split(".")[0:digit_num])
 
-            if digit_num == 1:
-                keys = tol_class_seq
-            elif digit_num == 2:
-                keys = tol_archi_seq
-                if key not in tol_archi_seq:
-                    index += 1
-                    continue
-            else:  # digit_num == 3
-                keys = tol_fold_seq
-                if key not in tol_fold_seq:
-                    index += 1
-                    continue
+        if digit_num == 1:
+            keys = tol_class_seq
+            code2name = CATH_CLASS_NAME
+        elif digit_num == 2:
+            keys = tol_archi_seq
+            code2name = CATH_ARCHI_NAME
+        else:  # digit_num == 3
+            keys = tol_fold_seq
+            code2name = CATH_FOLD_NAME
+
+        for label in labels:
+            key = ".".join(label.split(".")[0:digit_num])
+            if key not in keys:
+                index += 1
+                continue
 
             class_id = keys[key]
             color_str = ct[class_id % len(ct)]
@@ -240,8 +262,11 @@ def evaluate_with_cath_more_struct(
             colorid.append(class_id)
             select_index.append(index)
 
-            # legend entry: show CATH code (e.g., "3", "3.40", "3.40.50")
-            legend_labels[key] = color_str
+            display_label = code2name.get(key, key)
+            # "3.40.50 (Rossmann-like)"
+            # display_label = f"{key} ({code2name.get(key, 'Unknown')})"
+
+            legend_labels[display_label] = color_str
             index += 1
 
         print(f"sample num (digit {digit_num}) = {len(select_index)}")
