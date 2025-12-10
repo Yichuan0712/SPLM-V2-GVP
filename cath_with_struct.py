@@ -41,7 +41,7 @@ def scatter_labeled_z(z_batch, colors, filename="test_plot.png",
     """
     plt.switch_backend('Agg')
     fig = plt.gcf()
-    fig.set_size_inches(3.5, 3.5)
+    fig.set_size_inches(5, 5)
     plt.clf()
 
     # scatter all points
