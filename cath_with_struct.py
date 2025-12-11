@@ -88,7 +88,7 @@ def scatter_labeled_z(z_batch, colors, filename="test_plot.png",
             frameon=True,
         )
 
-    plt.savefig(filename, bbox_inches="tight", dpi=300)
+    plt.savefig(filename, bbox_inches="tight", dpi=800)
 
 
 def evaluate_with_cath_more_struct(
