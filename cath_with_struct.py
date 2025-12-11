@@ -41,7 +41,7 @@ def scatter_labeled_z(z_batch, colors, filename="test_plot.png",
     """
     plt.switch_backend('Agg')
     fig = plt.gcf()
-    fig.set_size_inches(5, 5)
+    fig.set_size_inches(4, 4)
     plt.clf()
 
     # scatter all points
@@ -88,7 +88,7 @@ def scatter_labeled_z(z_batch, colors, filename="test_plot.png",
             frameon=True,
         )
 
-    plt.savefig(filename, bbox_inches="tight")
+    plt.savefig(filename, bbox_inches="tight", dpi=300)
 
 
 def evaluate_with_cath_more_struct(
