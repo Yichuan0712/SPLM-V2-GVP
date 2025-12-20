@@ -314,41 +314,6 @@ def evaluate_with_cath_more_struct(
     return scores
 
 
-def test_evaluate_allcases():
-    checkpoint_path = "/cluster/pixstor/xudong-lab/duolin/splm_gvpgit/results/checkpoints_configs/checkpoint_0280000.pth"
-    config_path = "/cluster/pixstor/xudong-lab/duolin/splm_gvpgit/results/checkpoints_configs/config_plddtallweight_noseq_rotary_foldseek.yaml"
-    model, device, configs = StructRepresentModel(config_path=config_path,
-                                                  checkpoint_path=checkpoint_path
-                                                  )
-
-    out_figure_path = os.path.join(config_path.split(".yaml")[0], "CATH_test_release")
-    Path(out_figure_path).mkdir(parents=True, exist_ok=True)
-    cathpath = configs.valid_settings.eval_struct.cath_pdb_path
-    scores_cath = evaluate_with_cath_more_struct(out_figure_path,
-                                                 device=device,
-                                                 batch_size=1,
-                                                 model=model,
-                                                 cathpath=cathpath,
-                                                 configs=configs
-                                                 # seq_mode=configs.model.struct_encoder.use_seq.seq_embed_mode,
-                                                 # use_rotary_embeddings = configs.model.struct_encoder.use_rotary_embeddings
-                                                 )
-    print(
-        f"gvp_digit_num_1:{scores_cath[0]:.4f}({scores_cath[1]:.4f})\tgvp_digit_num_2:{scores_cath[4]:.4f}({scores_cath[5]:.4f})\tgvp_digit_num_3:{scores_cath[8]:.4f}({scores_cath[9]:.4f})\n")
-    print(
-        f"gvp_digit_num_1_ARI:{scores_cath[2]}\tgvp_digit_num_2_ARI:{scores_cath[6]}\tgvp_digit_num_3_ARI:{scores_cath[10]}\n")
-    print(
-        f"gvp_digit_num_1_silhouette:{scores_cath[3]}\tgvp_digit_num_2_silhouette:{scores_cath[7]}\tgvp_digit_num_3_silhouette:{scores_cath[11]}\n")
-
-    with open(os.path.join(out_figure_path, 'scores.txt'), 'w') as file:
-        file.write(
-            f"gvp_digit_num_1:{scores_cath[0]:.4f}({scores_cath[1]:.4f})\tgvp_digit_num_2:{scores_cath[3]:.4f}({scores_cath[4]:.4f})\tgvp_digit_num_3:{scores_cath[6]:.4f}({scores_cath[7]:.4f})\n")
-        file.write(
-            f"gvp_digit_num_1_ARI:{scores_cath[2]}\tgvp_digit_num_2_ARI:{scores_cath[5]}\tgvp_digit_num_3_ARI:{scores_cath[8]}\n")
-        file.write(
-            f"gvp_digit_num_1_silhouette:{scores_cath[3]}\tgvp_digit_num_2_silhouette:{scores_cath[7]}\tgvp_digit_num_3_silhouette:{scores_cath[11]}\n")
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Evaluate S-PLM2 structure embeddings on CATH."
