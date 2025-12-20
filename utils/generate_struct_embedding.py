@@ -18,6 +18,7 @@ import yaml
 from typing import Dict
 
 from accelerate import Accelerator
+from collections import OrderedDict
 
 
 def generate_struct_embedding_withfile(hdf5_path, query_save_path, config_path, checkpoint_path=None,
@@ -94,7 +95,8 @@ def generate_struct_embedding(hdf5_path: str, config_path: str, checkpoint_path:
                                   num_positional_embeddings=configs.model.struct_encoder.num_positional_embeddings)
 
     val_loader = DataLoader(dataset, batch_size=1, num_workers=0, pin_memory=True, collate_fn=custom_collate)
-    query_embedding_dic = {}
+    # query_embedding_dic = {}
+    query_embedding_dic = OrderedDict()
     for batch in val_loader:
         with torch.inference_mode():
             graph = batch["graph"].to(device)

@@ -21,6 +21,9 @@ import argparse
 from matplotlib.lines import Line2D
 
 
+from utils.generate_struct_embedding import generate_struct_embedding
+
+
 def scatter_labeled_z(z_batch, colors, filename="test_plot.png",
                       legend_labels=None, legend_title=None):
     """
@@ -93,23 +96,16 @@ def scatter_labeled_z(z_batch, colors, filename="test_plot.png",
 
 def evaluate_with_cath_more_struct(
     out_figure_path,
-    device,
-    batch_size,
-    model,
-    cathpath,
-    configs,
+    query_embedding_dic,
 ):
     """
     Evaluate structure embeddings on a CATH subset at multiple hierarchy levels.
 
-    This function:
-      - loads preprocessed CATH HDF5 data as ProteinGraphDataset,
-      - computes structure embeddings with the given model,
-      - projects embeddings to 2D with t-SNE,
-      - computes clustering metrics (Calinski–Harabasz, ARI, silhouette)
-        at the CATH class / architecture / fold levels,
-      - saves t-SNE scatter plots with color legends showing which
-        color corresponds to which CATH label.
+    Input
+    -----
+    query_embedding_dic : dict / OrderedDict
+        { pid(str) -> embedding(np.ndarray) }
+        pid looks like "..._3.40.50" (CATH fold code after underscore)
 
     Returns
     -------
@@ -142,57 +138,30 @@ def evaluate_with_cath_more_struct(
 
     Path(out_figure_path).mkdir(parents=True, exist_ok=True)
 
-    # Build dataset and dataloader
-    dataset = ProteinGraphDataset(
-        cathpath,
-        max_length=configs.model.esm_encoder.max_length,
-        seq_mode=configs.model.struct_encoder.use_seq.seq_embed_mode,
-        use_rotary_embeddings=configs.model.struct_encoder.use_rotary_embeddings,
-        rotary_mode=configs.model.struct_encoder.rotary_mode,
-        use_foldseek=configs.model.struct_encoder.use_foldseek,
-        use_foldseek_vector=configs.model.struct_encoder.use_foldseek_vector,
-        top_k=configs.model.struct_encoder.top_k,
-        num_rbf=configs.model.struct_encoder.num_rbf,
-        num_positional_embeddings=configs.model.struct_encoder.num_positional_embeddings,
-    )
+    if query_embedding_dic is None or len(query_embedding_dic) == 0:
+        print("No samples found in CATH embeddings; skipping evaluation.")
+        return []
 
-    val_loader = DataLoader(
-        dataset,
-        batch_size=batch_size,
-        num_workers=0,
-        pin_memory=True,
-        collate_fn=custom_collate,
-    )
+    # ---- build embeddings (N, D) ----
+    vals = list(query_embedding_dic.values())
+    try:
+        seq_embeddings = np.concatenate(vals, axis=0)
+    except ValueError:
+        # handle case where each embedding is (D,)
+        seq_embeddings = np.vstack([v.reshape(1, -1) for v in vals])
 
-    seq_embeddings = []
-    labels = []
-
-    # Forward pass to get structure embeddings + CATH labels
-    for batch in val_loader:
-        with torch.inference_mode():
-            graph = batch["graph"].to(device)
-            model_signature = signature(model.forward)
-            if "graph" in model_signature.parameters:
-                _, _, features_struct, _ = model(
-                    graph=graph, mode="structure", return_embedding=True
-                )
-            else:
-                _, _, features_struct, _ = model(
-                    graph, mode="structure", return_embedding=True
-                )
-
-            seq_embeddings.extend(features_struct.cpu().detach().numpy())
-            # pid looks like "..._3.40.50"; we keep "3.40.50"
-            labels.extend([pid.split("_")[1] for pid in batch["pid"]])
-
-    seq_embeddings = np.asarray(seq_embeddings)
     print(f"seq_embeddings = {seq_embeddings.shape}")
 
     if seq_embeddings.shape[0] == 0:
         print("No samples found in CATH dataset; skipping evaluation.")
         return []
 
-    # t-SNE projection for visualization
+    # ---- build labels ----
+    labels = []
+    batch = {"pid": list(query_embedding_dic.keys())}
+    labels.extend([pid.split("_")[1] for pid in batch["pid"]])
+
+    # ---- t-SNE projection for visualization ----
     tsne = TSNE(
         n_components=2,
         random_state=0,
@@ -234,9 +203,7 @@ def evaluate_with_cath_more_struct(
             ]
 
         select_index = []
-        # mapping: CATH code string -> color string (for legend)
         legend_labels = {}
-
         index = 0
 
         if digit_num == 1:
@@ -262,26 +229,18 @@ def evaluate_with_cath_more_struct(
             colorid.append(class_id)
             select_index.append(index)
 
-            # display_label = code2name.get(key, key)
-            # "3.40.50 (Rossmann-like)"
             display_label = f"{key} ({code2name.get(key, 'Unknown')})"
-
             legend_labels[display_label] = color_str
             index += 1
 
         print(f"sample num (digit {digit_num}) = {len(select_index)}")
         if len(select_index) == 0:
-            # no samples for this level; append NaNs to keep length consistent
             scores.extend([float("nan"), float("nan"), float("nan"), float("nan")])
             continue
 
         # Calinski–Harabasz on full and t-SNE embeddings
-        scores.append(
-            calinski_harabasz_score(seq_embeddings[select_index], color)
-        )  # full
-        scores.append(
-            calinski_harabasz_score(z_tsne_seq[select_index], color)
-        )  # t-SNE
+        scores.append(calinski_harabasz_score(seq_embeddings[select_index], color))  # full
+        scores.append(calinski_harabasz_score(z_tsne_seq[select_index], color))      # t-SNE
 
         # Legend title
         if digit_num == 1:
@@ -291,7 +250,7 @@ def evaluate_with_cath_more_struct(
         else:
             legend_title = "CATH fold"
 
-        # t-SNE scatter with legend
+        # t-SNE scatter with legend (uses your existing scatter_labeled_z)
         scatter_labeled_z(
             z_tsne_seq[select_index],
             color,
@@ -307,9 +266,7 @@ def evaluate_with_cath_more_struct(
         scores.append(ari)
 
         # Silhouette on full embeddings
-        scores.append(
-            silhouette_score(seq_embeddings[select_index], color)
-        )
+        scores.append(silhouette_score(seq_embeddings[select_index], color))
 
     return scores
 
@@ -335,25 +292,44 @@ def main():
         type=str,
         required=True,
     )
+    parser.add_argument(
+        "--truncate_inference",
+        default=None,
+        help="1:truncate the sequence length. 0: use full sequence length. default: None."
+    )
+    parser.add_argument(
+        "--max_length_inference",
+        default=None,
+        type=int,
+        nargs='?',
+        help="max sequence length during inference. Default: None."
+    )
+    parser.add_argument(
+        "--afterproject",
+        action="store_true",
+        help="embedding after projection layer",
+    )
     args = parser.parse_args()
 
-    # Build model & load checkpoint
-    model, device, configs = StructRepresentModel(
-        config_path=args.config_path,
-        checkpoint_path=args.checkpoint_path,
-    )
     cathpath = args.cath_path
     base = os.path.splitext(args.config_path)[0]
     out_figure_path = os.path.join(base, "CATH_test_release")
     Path(out_figure_path).mkdir(parents=True, exist_ok=True)
 
+    # generate embeddings by reusing generate_struct_embedding (no duplicate dataloader/model code here)
+    query_embedding_dic = generate_struct_embedding(
+        hdf5_path=cathpath,
+        config_path=args.config_path,
+        checkpoint_path=args.checkpoint_path,
+        truncate_inference=args.truncate_inference,
+        max_length_inference=args.max_length_inference,
+        afterproject=args.afterproject,
+        residue_level=False,
+    )
+
     scores_cath = evaluate_with_cath_more_struct(
         out_figure_path=out_figure_path,
-        device=device,
-        batch_size=1,
-        model=model,
-        cathpath=cathpath,
-        configs=configs,
+        query_embedding_dic=query_embedding_dic,
     )
 
     (
