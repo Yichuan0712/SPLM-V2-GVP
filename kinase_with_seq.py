@@ -131,7 +131,7 @@ def scatter_labeled_z(
 def evaluate_with_kinase_original_protocol_using_generate(
     out_figure_path,
     steps,
-    kinasepath,
+    kinase_seq,
     config_path,
     checkpoint_path,
 ):
@@ -162,7 +162,7 @@ def evaluate_with_kinase_original_protocol_using_generate(
     Path(out_figure_path).mkdir(parents=True, exist_ok=True)
 
     # --- Minimal change: read FASTA instead of TSV, but keep EXACT original semantics ---
-    rows = read_kinase_fasta_allinfo(kinasepath)
+    rows = read_kinase_fasta_allinfo(kinase_seq)
 
     # drop_duplicates(subset="Kinase_Entrez_Symbol", keep="first")
     seen = set()
@@ -289,7 +289,7 @@ def main():
     )
     parser.add_argument("--checkpoint_path", type=str, required=True)
     parser.add_argument("--config_path", type=str, required=True)
-    parser.add_argument("--kinase_path", type=str, required=True)
+    parser.add_argument("--kinase_seq", type=str, required=True)
     parser.add_argument("--steps", type=int, default=0,
                         help="Used only for naming output: step_{steps}_kinase.png")
     args = parser.parse_args()
@@ -301,7 +301,7 @@ def main():
     scores = evaluate_with_kinase_original_protocol_using_generate(
         out_figure_path=out_figure_path,
         steps=args.steps,
-        kinasepath=args.kinase_path,
+        kinase_seq=args.kinase_seq,
         config_path=args.config_path,
         checkpoint_path=args.checkpoint_path,
     )
