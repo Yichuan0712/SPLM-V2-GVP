@@ -1,6 +1,3 @@
-import torch.nn as nn
-import torch
-import torch.backends.cudnn as cudnn
 import matplotlib.pyplot as plt
 import os
 import numpy as np
@@ -10,13 +7,7 @@ from torch.utils.data import DataLoader
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
 from pathlib import Path
-import tqdm
-from accelerate import Accelerator, DistributedDataParallelKwargs
-from inspect import signature
 from sklearn.metrics import silhouette_score
-from torch_geometric.nn import radius, global_mean_pool, global_max_pool
-from data.data import custom_collate, ProteinGraphDataset
-from utils.generate_struct_embedding import StructRepresentModel
 import argparse
 from matplotlib.lines import Line2D
 
