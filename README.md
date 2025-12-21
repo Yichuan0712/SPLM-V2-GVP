@@ -115,7 +115,7 @@ All scripts save **t-SNE figures** and a `scores.txt` summary under the output f
 python cath_with_struct.py \
   --checkpoint_path /path/to/checkpoint.pth \
   --config_path /path/to/config.yaml \
-  --cath_path /path/to/dataset/CATH_4_3_0_non-rep_h5/
+  --cath_path ./dataset/CATH_4_3_0_non-rep_h5/
 ````
 
 #### 3.2 CATH (sequence branch)
@@ -124,7 +124,7 @@ python cath_with_struct.py \
 python cath_with_seq.py \
   --checkpoint_path /path/to/checkpoint.pth \
   --config_path /path/to/config.yaml \
-  --input_seq /path/to/Rep_subfamily_basedon_S40pdb.fa 
+  --input_seq ./dataset/Rep_subfamily_basedon_S40pdb.fa 
 ```
 
 #### 3.3 Kinase (sequence branch)
@@ -133,7 +133,7 @@ python cath_with_seq.py \
 python kinase_with_seq.py \
   --checkpoint_path /path/to/checkpoint.pth \
   --config_path /path/to/config.yaml \
-  --kinase_path /path/to/GPS5.0_homo_hasPK_with_kinasedomain.txt 
+  --kinase_path ./dataset/GPS5.0_homo_hasPK_with_kinasedomain.txt 
 ```
 
 
