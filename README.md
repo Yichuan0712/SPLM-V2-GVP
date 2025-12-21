@@ -104,43 +104,39 @@ python -m utils.generate_seq_embedding \
 ```
 
 
-### 3) CATH evaluation (structure branch)
+### 3) CATH/Kinase evaluation
 
-Evaluate the structure branch on CATH using the provided utility:
+Evaluate clustering quality on **CATH** (structure branch + sequence branch) and **Kinase** (sequence branch).  
+All scripts save **t-SNE figures** and a `scores.txt` summary under the output folder.
 
-```python
-import os
-from pathlib import Path
-from utils.generate_struct_embedding import StructRepresentModel
-from cath_with_struct import evaluate_with_cath_more_struct
+#### 3.1 CATH (structure branch)
 
-# Paths (match your local paths)
-checkpoint_path = "/path/to/checkpoint_0280000_gvp.pth"
-config_path = "/path/to/configs/config_plddtallweight_noseq_rotary_foldseek.yaml"
-cathpath = "/path/to/CATH_4_3_0_non-rep_gvp/"   # directory created by the preprocess step
+```bash
+python cath_with_struct.py \
+  --checkpoint_path /path/to/checkpoint.pth \
+  --config_path /path/to/config.yaml \
+  --cath_path /path/to/dataset/CATH_4_3_0_non-rep_h5/
+````
 
-# Build model from config + checkpoint
-model, device, configs = StructRepresentModel(
-    config_path=config_path,
-    checkpoint_path=checkpoint_path
-)
+#### 3.2 CATH (sequence branch)
 
-# Output directory for evaluation artifacts
-out_figure_path = os.path.join(config_path.split(".yaml")[0], "CATH_test_release")
-Path(out_figure_path).mkdir(parents=True, exist_ok=True)
-
-# Run evaluation
-scores_cath = evaluate_with_cath_more_struct(
-    out_figure_path,
-    device=device,
-    batch_size=1,
-    model=model,
-    cathpath=cathpath,
-    configs=configs
-)
-
-print(scores_cath)
+```bash
+python cath_with_seq.py \
+  --checkpoint_path /path/to/checkpoint.pth \
+  --config_path /path/to/config.yaml \
+  --input_seq /path/to/Rep_subfamily_basedon_S40pdb.fa 
 ```
+
+#### 3.3 Kinase (sequence branch)
+
+```bash
+python kinase_with_seq.py \
+  --checkpoint_path /path/to/checkpoint.pth \
+  --config_path /path/to/config.yaml \
+  --kinase_path /path/to/GPS5.0_homo_hasPK_with_kinasedomain.txt 
+```
+
+
 
 
    
