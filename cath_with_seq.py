@@ -174,11 +174,7 @@ def evaluate_with_cath_more_seq_aligned(
 
     # --- Build embeddings array (N, D) in insertion order ---
     vals = list(query_embedding_dic.values())
-    try:
-        seq_embeddings = np.concatenate(vals, axis=0)
-    except ValueError:
-        seq_embeddings = np.vstack([v.reshape(1, -1) for v in vals])
-
+    seq_embeddings = np.concatenate(vals, axis=0)
     seq_embeddings = np.asarray(seq_embeddings)
 
     # --- Original debug distance stats (first 50) ---
