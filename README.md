@@ -106,7 +106,7 @@ python -m utils.generate_seq_embedding \
 
 ### 3) CATH/Kinase evaluation
 
-Evaluate clustering quality on **CATH** (structure branch + sequence branch) and **Kinase** (sequence branch).  
+Evaluate clustering quality on **CATH** (structure branch + sequence branch) and **Kinase** (sequence branch) datasets.  
 All scripts save **t-SNE figures** and a `scores.txt` summary under the output folder.
 
 #### 3.1 CATH (structure branch)
