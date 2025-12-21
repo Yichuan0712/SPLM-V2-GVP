@@ -124,7 +124,7 @@ python cath_with_struct.py \
 python cath_with_seq.py \
   --checkpoint_path /path/to/checkpoint.pth \
   --config_path /path/to/config.yaml \
-  --input_seq ./dataset/Rep_subfamily_basedon_S40pdb.fa 
+  --cath_seq ./dataset/Rep_subfamily_basedon_S40pdb.fa 
 ```
 
 #### 3.3 Kinase (sequence branch)
@@ -133,7 +133,7 @@ python cath_with_seq.py \
 python kinase_with_seq.py \
   --checkpoint_path /path/to/checkpoint.pth \
   --config_path /path/to/config.yaml \
-  --kinase_path ./dataset/GPS5.0_homo_hasPK_with_kinasedomain.txt 
+  --kinase_seq ./dataset/kinase_alllabels.fa 
 ```
 
 
