@@ -300,11 +300,11 @@ def main():
         action="store_true",
         help="embedding after projection layer",
     )
+    parser.add_argument("--result_path", type=str, default="./")
     args = parser.parse_args()
 
     cathpath = args.cath_path
-    base = os.path.splitext(args.config_path)[0]
-    out_figure_path = os.path.join(base, "CATH_test_release")
+    out_figure_path = args.result_path
     Path(out_figure_path).mkdir(parents=True, exist_ok=True)
 
     # generate embeddings by reusing generate_struct_embedding (no duplicate dataloader/model code here)
