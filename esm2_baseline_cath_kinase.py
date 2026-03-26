@@ -7,20 +7,18 @@ output figures and scores.txt), but embeddings come from
 
 Requires: pip install fair-esm  (already listed in install.txt)
 
-Examples
---------
-  python esm2_baseline_cath_kinase.py cath \\
-    --cath_seq ./dataset/Rep_subfamily_basedon_S40pdb.fa \\
-    --result_path ./out_esm2_cath/
+Always runs **both** CATH and Kinase. Outputs go under ``{result_path}/cath/`` and
+``{result_path}/kinase/`` (default ``--result_path`` is ``./``).
 
-  python esm2_baseline_cath_kinase.py kinase \\
-    --kinase_seq ./dataset/kinase_alllabels.fa \\
-    --result_path ./out_esm2_kinase/
-
-  python esm2_baseline_cath_kinase.py all \\
+Example
+-------
+  cd /path/to/SPLM-V2-GVP
+  python esm2_baseline_cath_kinase.py \\
     --cath_seq ./dataset/Rep_subfamily_basedon_S40pdb.fa \\
-    --kinase_seq ./dataset/kinase_alllabels.fa \\
-    --result_path ./out_esm2_baseline/
+    --kinase_seq ./dataset/kinase_alllabels.fa
+
+  python esm2_baseline_cath_kinase.py \\
+    --cath_seq ... --kinase_seq ... --result_path ./out_esm2/
 """
 from __future__ import annotations
 
@@ -545,79 +543,48 @@ def print_kinase_summary(title: str, scores: list):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="CATH / Kinase eval with plain fair-esm ESM2 t33 650M UR50D (no SPLM checkpoint)."
+        description=(
+            "Run CATH then Kinase with plain fair-esm ESM2 t33 650M UR50D (no SPLM checkpoint). "
+            "Writes result_path/cath/ and result_path/kinase/ (default result_path: ./)."
+        )
     )
-    sub = parser.add_subparsers(dest="task", required=True)
-
-    p_cath = sub.add_parser("cath", help="CATH only (same protocol as cath_with_seq.py)")
-    p_cath.add_argument("--cath_seq", type=str, required=True)
-    p_cath.add_argument("--result_path", type=str, default="./")
-    p_cath.add_argument("--truncate_inference", type=int, default=None, choices=[0, 1])
-    p_cath.add_argument("--max_length_inference", type=int, default=None)
-    p_cath.add_argument("--batch_size", type=int, default=4)
-
-    p_kin = sub.add_parser("kinase", help="Kinase only (same protocol as kinase_with_seq.py)")
-    p_kin.add_argument("--kinase_seq", type=str, required=True)
-    p_kin.add_argument("--result_path", type=str, default="./")
-    p_kin.add_argument("--batch_size", type=int, default=4)
-
-    p_all = sub.add_parser(
-        "all",
-        help="Run CATH then Kinase; writes to result_path/cath/ and result_path/kinase/",
+    parser.add_argument("--cath_seq", type=str, required=True, help="CATH FASTA path")
+    parser.add_argument("--kinase_seq", type=str, required=True, help="Kinase FASTA path")
+    parser.add_argument(
+        "--result_path",
+        type=str,
+        default="./",
+        help="Output root directory (default: ./). Subdirs cath/ and kinase/ are created.",
     )
-    p_all.add_argument("--cath_seq", type=str, required=True)
-    p_all.add_argument("--kinase_seq", type=str, required=True)
-    p_all.add_argument("--result_path", type=str, default="./out_esm2_baseline/")
-    p_all.add_argument("--truncate_inference", type=int, default=None, choices=[0, 1])
-    p_all.add_argument("--max_length_inference", type=int, default=None)
-    p_all.add_argument("--batch_size", type=int, default=4)
+    parser.add_argument("--truncate_inference", type=int, default=None, choices=[0, 1])
+    parser.add_argument("--max_length_inference", type=int, default=None)
+    parser.add_argument("--batch_size", type=int, default=4)
 
     args = parser.parse_args()
 
-    if args.task == "cath":
-        Path(args.result_path).mkdir(parents=True, exist_ok=True)
-        scores, title = run_cath_esm2(
-            args.result_path,
-            args.cath_seq,
-            args.truncate_inference,
-            args.max_length_inference,
-            args.batch_size,
-        )
-        print_cath_summary(title, scores)
-        write_cath_scores_txt(args.result_path, scores, title)
+    base = args.result_path
+    Path(base).mkdir(parents=True, exist_ok=True)
+    cath_dir = os.path.join(base, "cath")
+    kinase_dir = os.path.join(base, "kinase")
 
-    elif args.task == "kinase":
-        Path(args.result_path).mkdir(parents=True, exist_ok=True)
-        scores, title = run_kinase_esm2(args.result_path, args.kinase_seq, args.batch_size)
-        print_kinase_summary(title, scores)
-        write_kinase_scores_txt(args.result_path, scores, title)
-        print(f"Figure saved to {os.path.join(args.result_path, 'kinase_group_seqrep.png')}")
+    print("=== Running CATH (ESM2 baseline) ===")
+    cath_scores, cath_title = run_cath_esm2(
+        cath_dir,
+        args.cath_seq,
+        args.truncate_inference,
+        args.max_length_inference,
+        args.batch_size,
+    )
+    print_cath_summary(cath_title, cath_scores)
+    write_cath_scores_txt(cath_dir, cath_scores, cath_title)
 
-    else:
-        base = args.result_path
-        Path(base).mkdir(parents=True, exist_ok=True)
-        cath_dir = os.path.join(base, "cath")
-        kinase_dir = os.path.join(base, "kinase")
-
-        print("=== Running CATH (ESM2 baseline) ===")
-        cath_scores, cath_title = run_cath_esm2(
-            cath_dir,
-            args.cath_seq,
-            args.truncate_inference,
-            args.max_length_inference,
-            args.batch_size,
-        )
-        print_cath_summary(cath_title, cath_scores)
-        write_cath_scores_txt(cath_dir, cath_scores, cath_title)
-
-        print("\n=== Running Kinase (ESM2 baseline) ===")
-        kin_scores, kin_title = run_kinase_esm2(kinase_dir, args.kinase_seq, args.batch_size)
-        print_kinase_summary(kin_title, kin_scores)
-        write_kinase_scores_txt(kinase_dir, kin_scores, kin_title)
-        print(f"Figure saved to {os.path.join(kinase_dir, 'kinase_group_seqrep.png')}")
-        print(f"\nAll outputs under: {os.path.abspath(base)}")
+    print("\n=== Running Kinase (ESM2 baseline) ===")
+    kin_scores, kin_title = run_kinase_esm2(kinase_dir, args.kinase_seq, args.batch_size)
+    print_kinase_summary(kin_title, kin_scores)
+    write_kinase_scores_txt(kinase_dir, kin_scores, kin_title)
+    print(f"Figure saved to {os.path.join(kinase_dir, 'kinase_group_seqrep.png')}")
+    print(f"\nOutputs: {os.path.abspath(cath_dir)}/  and  {os.path.abspath(kinase_dir)}/")
 
 
 if __name__ == "__main__":
     main()
-# push test
