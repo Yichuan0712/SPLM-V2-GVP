@@ -274,37 +274,28 @@ class ESM2(nn.Module):  # embedding table is fixed
         unfix_last_layer: the number of layers that can be fine-tuned
         """
         super(ESM2, self).__init__()
+        # Match S-PLM v1: load only the requested checkpoint (dict literals would eagerly load all variants).
+        model_key = esm2_pretrain.split("/")[-1] if "/" in esm2_pretrain else esm2_pretrain
+
         if configs.model.esm_encoder.adapter_h.enable:
             if logging is not None:
                 logging.info("use adapter H")
-            # num_end_adapter_layers = configs.model.esm_encoder.adapter_h.num_end_adapter_layers
             adapter_args = configs.model.esm_encoder.adapter_h
-            esm2_dict = {
-                "esm2_t36_3B_UR50D": esm_adapterH.pretrained.esm2_t36_3B_UR50D(adapter_args),
-                # 36 layers embedding=2560
-                "esm2_t33_650M_UR50D": esm_adapterH.pretrained.esm2_t33_650M_UR50D(adapter_args),
-                # 33 layers embedding=1280
-                "esm2_t30_150M_UR50D": esm_adapterH.pretrained.esm2_t30_150M_UR50D(adapter_args),
-                # 30 layers embedding=640
-                "esm2_t12_35M_UR50D": esm_adapterH.pretrained.esm2_t12_35M_UR50D(adapter_args),
-                # 12 layers embedding=480
-                "esm2_t6_8M_UR50D": esm_adapterH.pretrained.esm2_t6_8M_UR50D(adapter_args),
-                # 6 layers embedding = 320
-            }
+            model_constructor = getattr(esm_adapterH.pretrained, model_key, None)
+            if model_constructor is None:
+                raise ValueError(
+                    f"Unknown ESM2 model '{esm2_pretrain}' (resolved: '{model_key}'). "
+                    "Use a name like esm2_t33_650M_UR50D on esm_adapterH.pretrained."
+                )
+            self.esm2, self.alphabet = model_constructor(adapter_args)
         else:
-            esm2_dict = {
-                "esm2_t36_3B_UR50D": esm.pretrained.esm2_t36_3B_UR50D(),  # 36 layers embedding=2560
-                "esm2_t33_650M_UR50D": esm.pretrained.esm2_t33_650M_UR50D(),  # 33 layers embedding=1280
-                "esm2_t30_150M_UR50D": esm.pretrained.esm2_t30_150M_UR50D(),  # 30 layers embedding=640
-                "esm2_t12_35M_UR50D": esm.pretrained.esm2_t12_35M_UR50D(),  # 12 layers embedding=480
-                "esm2_t6_8M_UR50D": esm.pretrained.esm2_t6_8M_UR50D(),  # 6 layers embedding = 320
-            }
-
-        # if esm2_pretrain_local is None:
-        self.esm2, self.alphabet = esm2_dict[esm2_pretrain]  # alphabet.all_toks
-        # else:
-        #     print("load esm2 model from local dir")
-        #     self.esm2, self.alphabet = esm.pretrained.load_model_and_alphabet_local(esm2_pretrain_local)
+            model_constructor = getattr(esm.pretrained, model_key, None)
+            if model_constructor is None:
+                raise ValueError(
+                    f"Unknown ESM2 model '{esm2_pretrain}' (resolved: '{model_key}'). "
+                    "Use a name like esm2_t33_650M_UR50D on esm.pretrained."
+                )
+            self.esm2, self.alphabet = model_constructor()
 
         self.num_layers = self.esm2.num_layers
         for p in self.esm2.parameters():  # frozen all parameters first
