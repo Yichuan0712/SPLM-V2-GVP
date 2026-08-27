@@ -21,7 +21,7 @@ Please **install dependencies exactly in the order listed in [install.txt](https
    
 ## Pretrained checkpoint
 
-Download the pretrained SPLM-V2-GVP weights from **[this OneDrive link](https://mailmissouri-my.sharepoint.com/personal/wangdu_umsystem_edu/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fwangdu%5Fumsystem%5Fedu%2FDocuments%2FS%2DPLM%2Dmodel%2Fmodel%2Fcheckpoint%5F0280000%5Fgvp%2Epth&parent=%2Fpersonal%2Fwangdu%5Fumsystem%5Fedu%2FDocuments%2FS%2DPLM%2Dmodel%2Fmodel&ga=1)** and set its path in your config or pass it via `--checkpoint_path`.
+Download the pretrained SPLM-V2-GVP weights from **[this link](https://drive.google.com/drive/folders/1YiHcVUHudcn7XXaOlp1F5zE2TF0rcNpE?usp=share_link)** and set its path in your config or pass it via `--checkpoint_path`.
 
    
 
